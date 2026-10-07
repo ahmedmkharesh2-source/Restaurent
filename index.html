@@ -1,0 +1,945 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Restaurant Table Manager</title>
+
+    <style>
+      /* =========================================================
+         ✅ الأنماط الأساسية (مظهر وشكل واجهة المستخدم)
+         ========================================================= */
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: radial-gradient(circle at top, #111827, #020617 60%);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        color: #f9fafb;
+      }
+
+      /* ✅ حاوية التطبيق (عمودان: الجداول على اليسار، القائمة والطلب على اليمين) */
+      .shell {
+        width: 1200px;
+        max-width: 96vw;
+        background: #020617;
+        border-radius: 22px;
+        box-shadow: 0 26px 70px rgba(0, 0, 0, 0.9);
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        padding: 22px 24px 24px;
+        display: grid;
+        grid-template-columns: 1.1fr 2fr;
+        gap: 18px;
+      }
+
+      /* ✅ رأس الصفحة (العنوان + الشارة) */
+      .header {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+      }
+
+      .header-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 1.9rem;
+      }
+
+      .header p {
+        margin: 0;
+        font-size: 0.95rem;
+        color: #9ca3af;
+      }
+
+      .badge {
+        background: rgba(37, 99, 235, 0.15);
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-size: 0.78rem;
+        color: #bfdbfe;
+        border: 1px solid rgba(59, 130, 246, 0.6);
+      }
+
+      /* =========================================================
+         ✅ اللوحة اليسرى: الجداول
+         ========================================================= */
+      .left-panel {
+        border-right: 1px solid rgba(55, 65, 81, 0.9);
+        padding-right: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .section-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .card {
+        background: #030712;
+        border-radius: 16px;
+        border: 1px solid rgba(55, 65, 81, 0.9);
+        padding: 14px 16px;
+      }
+
+      .tables-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 350px;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+
+      .table-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 12px;
+        padding: 8px 10px;
+        background: radial-gradient(
+          circle at left,
+          rgba(15, 23, 42, 0.9),
+          #020617
+        );
+        border: 1px solid rgba(55, 65, 81, 0.9);
+      }
+
+      .table-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .table-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+
+      .table-status {
+        font-size: 0.78rem;
+        color: #9ca3af;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      .dot-open {
+        background: #22c55e;
+      }
+
+      .dot-closed {
+        background: #f97316;
+      }
+
+      .table-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      /* =========================================================
+         ✅ الأزرار
+         ========================================================= */
+      button {
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #e5e7eb;
+        background: #2563eb;
+        transition: background 0.18s ease, transform 0.12s ease,
+          box-shadow 0.18s ease;
+        box-shadow: 0 3px 10px rgba(37, 99, 235, 0.45);
+        white-space: nowrap;
+      }
+
+      button:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 16px rgba(37, 99, 235, 0.7);
+      }
+
+      button:active {
+        transform: translateY(0);
+        box-shadow: 0 3px 8px rgba(37, 99, 235, 0.45);
+      }
+
+      .btn-secondary {
+        background: #6b7280;
+        box-shadow: 0 3px 10px rgba(75, 85, 99, 0.6);
+      }
+
+      .btn-secondary:hover {
+        background: #4b5563;
+      }
+
+      .btn-danger {
+        background: #dc2626;
+        box-shadow: 0 3px 10px rgba(220, 38, 38, 0.6);
+      }
+
+      .btn-danger:hover {
+        background: #b91c1c;
+      }
+
+      .btn-small {
+        padding: 4px 9px;
+        font-size: 0.78rem;
+      }
+
+      .selected-label {
+        font-size: 0.82rem;
+        color: #9ca3af;
+        margin-top: 4px;
+      }
+
+      /* =========================================================
+         ✅ اللوحة اليمنى: القائمة + الطلب الحالي
+         ========================================================= */
+      .right-panel {
+        display: grid;
+        grid-template-rows: 1.2fr 1fr;
+        gap: 10px;
+      }
+
+      .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 10px;
+      }
+
+      .menu-item {
+        background: radial-gradient(circle at top, #111827, #020617 55%);
+        border-radius: 14px;
+        border: 1px solid rgba(55, 65, 81, 0.9);
+        padding: 10px 11px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .menu-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+
+      .menu-desc {
+        font-size: 0.78rem;
+        color: #9ca3af;
+      }
+
+      .menu-footer {
+        margin-top: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .menu-price {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #22c55e;
+      }
+
+      .order-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+        background: #020617;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid rgba(55, 65, 81, 0.9);
+      }
+
+      thead {
+        background: #0f172a;
+      }
+
+      th,
+      td {
+        padding: 6px 8px;
+        border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+        text-align: left;
+      }
+
+      th {
+        font-weight: 600;
+        color: #e5e7eb;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #020617;
+      }
+
+      tbody tr:nth-child(odd) {
+        background: #030712;
+      }
+
+      .qty-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .qty-value {
+        min-width: 24px;
+        text-align: center;
+      }
+
+      .order-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 4px;
+      }
+
+      .total-label {
+        font-size: 0.9rem;
+        color: #9ca3af;
+      }
+
+      .total-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #4ade80;
+      }
+
+      .order-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .order-empty {
+        font-size: 0.8rem;
+        color: #9ca3af;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <!-- =========================================================
+           ✅ رأس الصفحة
+           ========================================================= -->
+      <div class="header">
+        <div class="header-title">
+          <h1>Restaurant Table Manager</h1>
+          <p>Open tables, add orders from the menu, print checks in a popup.</p>
+        </div>
+        <div class="badge">
+          Client-Side • JavaScript + window.open() Print Popup
+        </div>
+      </div>
+
+      <!-- =========================================================
+           ✅ اليسار: الجداول
+           ========================================================= -->
+      <div class="left-panel">
+        <div class="card">
+          <div class="section-title">🪑 Tables</div>
+
+          <!-- ✅ سيقوم JavaScript بعرض جميع الجداول هنا -->
+          <div id="tablesList" class="tables-list"></div>
+
+          <!-- ✅ يعرض الجدول المحدد حاليًا -->
+          <div id="selectedTableLabel" class="selected-label">
+            Selected table: none
+          </div>
+
+          <!-- ✅ عناصر التحكم الخاصة بالتجربة -->
+          <div
+            style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap"
+          >
+            <button class="btn-secondary btn-small" onclick="addNewTable()">
+              + Add Table
+            </button>
+            <button class="btn-secondary btn-small" onclick="resetAll()">
+              Reset All (Demo)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           ✅ اليمين: القائمة + الطلب الحالي
+           ========================================================= -->
+      <div class="right-panel">
+        <!-- ✅ القائمة -->
+        <div class="card">
+          <div class="section-title">📋 Menu</div>
+          <div id="menuGrid" class="menu-grid"></div>
+        </div>
+
+        <!-- ✅ الطلب -->
+        <div class="card order-card">
+          <div class="section-title">🧾 Current Table Order</div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 35%">Item</th>
+                <th style="width: 15%">Price</th>
+                <th style="width: 25%">Qty</th>
+                <th style="width: 20%">Subtotal</th>
+                <th style="width: 5%"></th>
+              </tr>
+            </thead>
+            <tbody id="orderBody"></tbody>
+          </table>
+
+          <!-- ✅ يظهر عندما لا يوجد طلب لعرضه -->
+          <div id="orderEmpty" class="order-empty">
+            No table selected or no items yet.
+          </div>
+
+          <div class="order-footer">
+            <div>
+              <span class="total-label">Total:</span>
+              <span id="orderTotal" class="total-value">$0.00</span>
+            </div>
+
+            <div class="order-actions">
+              <button class="btn-secondary btn-small" onclick="clearOrder()">
+                Clear Order
+              </button>
+              <button onclick="printCheckAndClose()">
+                Print Check & Close Table
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* =========================================================
+         ✅ نظرة عامة على الكود (مناسب للمبتدئين)
+         ---------------------------------------------------------
+         ✅ الهدف:
+            - إدارة طاولات المطعم (فتح/إغلاق + تحديد)
+            - إضافة عناصر القائمة إلى طلب الطاولة المحددة
+            - طباعة الفاتورة في نافذة منبثقة، ثم إغلاق الطاولة
+
+         ✅ التخطيط:
+            1️⃣ اللوحة اليسرى  → قائمة الجداول + فتح/إغلاق + تحديد
+            2️⃣ أعلى اليمين   → بطاقات القائمة (إضافة عنصر)
+            3️⃣ أسفل اليمين  → جدول الطلب الحالي (الكمية + الحذف + الإجمالي)
+
+         ✅ سير العمل الرئيسي:
+            1️⃣ يقوم المستخدم بفتح طاولة وتحديدها
+            2️⃣ يضيف المستخدم عناصر القائمة → يتم تخزين الطلب في الذاكرة
+            3️⃣ يطبع المستخدم الفاتورة → تفتح نافذة منبثقة → تظهر نافذة الطباعة
+            4️⃣ بعد ذلك، تُغلق الطاولة ويتم مسح طلبها (سلوك خاص بالتجربة)
+         ========================================================= */
+
+      /* =========================================================
+         ✅ 1) نماذج البيانات (محفوظة في الذاكرة لهذه التجربة)
+         ---------------------------------------------------------
+         ⚠️ هذه التجربة لا تستخدم قاعدة بيانات.
+         يتم تخزين البيانات في متغيرات JavaScript (وتُفقد عند تحديث الصفحة).
+         ========================================================= */
+
+      // ✅ قائمة طاولات المطعم
+      // كل طاولة: { id, name, isOpen }
+      let tables = [
+        { id: 1, name: "Table 1", isOpen: false },
+        { id: 2, name: "Table 2", isOpen: false },
+        { id: 3, name: "Table 3", isOpen: false },
+        { id: 4, name: "Table 4", isOpen: false },
+      ];
+
+      // ✅ قائمة مطعم ثابتة
+      // كل عنصر: { id, name, price, description }
+      const menu = [
+        {
+          id: 101,
+          name: "Margherita Pizza",
+          price: 8.5,
+          description: "Tomato, mozzarella, basil.",
+        },
+        {
+          id: 102,
+          name: "Grilled Chicken",
+          price: 11.0,
+          description: "Served with vegetables and rice.",
+        },
+        {
+          id: 103,
+          name: "Caesar Salad",
+          price: 6.5,
+          description: "Fresh lettuce, croutons, parmesan.",
+        },
+        {
+          id: 104,
+          name: "Spaghetti Bolognese",
+          price: 9.0,
+          description: "Rich meat sauce, parmesan.",
+        },
+        {
+          id: 105,
+          name: "Lemonade",
+          price: 2.5,
+          description: "Freshly squeezed.",
+        },
+        {
+          id: 106,
+          name: "Cheesecake",
+          price: 4.5,
+          description: "Classic baked cheesecake.",
+        },
+      ];
+
+      // ✅ تخزين الطلبات (لكل طاولة)
+      // المفتاح   → معرف الطاولة (رقم)
+      // القيمة → مصفوفة من عناصر الطلب
+      // عنصر الطلب: { menuId, name, price, quantity }
+      const ordersByTable = {};
+
+      // ✅ الطاولة المحددة حاليًا
+      let selectedTableId = null;
+
+      /* =========================================================
+         ✅ 2) مراجع DOM (تخزين العناصر مرة واحدة)
+         ========================================================= */
+      const tablesList = document.getElementById("tablesList");
+      const selectedTableLabel = document.getElementById("selectedTableLabel");
+      const menuGrid = document.getElementById("menuGrid");
+      const orderBody = document.getElementById("orderBody");
+      const orderEmpty = document.getElementById("orderEmpty");
+      const orderTotal = document.getElementById("orderTotal");
+
+      /* =========================================================
+         ✅ 3) العرض الأولي (يتم تشغيله مرة واحدة عند بدء التشغيل)
+         ========================================================= */
+      renderTables();
+      renderMenu();
+      renderCurrentOrder();
+
+      /* =========================================================
+         ✅ 4) الجداول: العرض + الإجراءات
+         ========================================================= */
+
+      // ✅ عرض جميع الجداول في اللوحة اليسرى
+      function renderTables() {
+        tablesList.innerHTML = "";
+
+        tables.forEach(function (table) {
+          // ✅ حاوية الصف
+          const row = document.createElement("div");
+          row.className = "table-item";
+
+          // ✅ معلومات الطاولة: الاسم + الحالة
+          const info = document.createElement("div");
+          info.className = "table-info";
+
+          const name = document.createElement("div");
+          name.className = "table-name";
+          name.textContent = table.name;
+
+          const status = document.createElement("div");
+          status.className = "table-status";
+
+          const dot = document.createElement("div");
+          dot.className =
+            "status-dot " + (table.isOpen ? "dot-open" : "dot-closed");
+
+          const statusText = document.createElement("span");
+          statusText.textContent = table.isOpen ? "Open" : "Closed";
+
+          status.appendChild(dot);
+          status.appendChild(statusText);
+
+          info.appendChild(name);
+          info.appendChild(status);
+
+          // ✅ الإجراءات: تحديد + فتح/إغلاق
+          const actions = document.createElement("div");
+          actions.className = "table-actions";
+
+          const selectBtn = document.createElement("button");
+          selectBtn.className = "btn-small";
+          selectBtn.textContent = "Select";
+          selectBtn.onclick = function () {
+            selectTable(table.id);
+          };
+
+          const toggleBtn = document.createElement("button");
+          toggleBtn.className = "btn-secondary btn-small";
+          toggleBtn.textContent = table.isOpen ? "Close" : "Open";
+          toggleBtn.onclick = function () {
+            toggleTableOpen(table.id);
+          };
+
+          actions.appendChild(selectBtn);
+          actions.appendChild(toggleBtn);
+
+          row.appendChild(info);
+          row.appendChild(actions);
+
+          tablesList.appendChild(row);
+        });
+      }
+
+      // ✅ تحديد طاولة حتى نتمكن من إضافة العناصر إلى طلبها
+      function selectTable(tableId) {
+        selectedTableId = tableId;
+
+        const table = tables.find(function (t) {
+          return t.id === tableId;
+        });
+
+        if (table) {
+          selectedTableLabel.textContent =
+            "Selected table: " +
+            table.name +
+            (table.isOpen ? " (Open)" : " (Closed)");
+        } else {
+          selectedTableLabel.textContent = "Selected table: none";
+        }
+
+        renderCurrentOrder();
+      }
+
+      // ✅ تبديل حالة الطاولة بين مفتوحة ومغلقة
+      function toggleTableOpen(tableId) {
+        const table = tables.find(function (t) {
+          return t.id === tableId;
+        });
+
+        if (!table) return;
+
+        // ✅ عكس القيمة المنطقية
+        table.isOpen = !table.isOpen;
+
+        renderTables();
+        renderCurrentOrder();
+      }
+
+      // ✅ إضافة طاولة جديدة (في التجربة: زيادة المعرف تلقائيًا)
+      function addNewTable() {
+        const nextId = tables.length > 0 ? tables[tables.length - 1].id + 1 : 1;
+
+        tables.push({
+          id: nextId,
+          name: "Table " + nextId,
+          isOpen: false,
+        });
+
+        renderTables();
+      }
+
+      // ✅ إعادة كل شيء (الجداول + الطلبات) إلى حالة التجربة الأولية
+      function resetAll() {
+        if (!confirm("Reset all tables and orders (demo only)?")) return;
+
+        tables = [
+          { id: 1, name: "Table 1", isOpen: false },
+          { id: 2, name: "Table 2", isOpen: false },
+          { id: 3, name: "Table 3", isOpen: false },
+          { id: 4, name: "Table 4", isOpen: false },
+        ];
+
+        // ✅ مسح كائن الطلبات
+        for (const key in ordersByTable) {
+          delete ordersByTable[key];
+        }
+
+        selectedTableId = null;
+
+        renderTables();
+        selectedTableLabel.textContent = "Selected table: none";
+        renderCurrentOrder();
+      }
+
+      /* =========================================================
+         ✅ 5) القائمة: العرض + إضافة العناصر إلى الطلب
+         ========================================================= */
+
+      // ✅ عرض بطاقات القائمة (أعلى اليمين)
+      function renderMenu() {
+        menuGrid.innerHTML = "";
+
+        menu.forEach(function (item) {
+          const card = document.createElement("div");
+          card.className = "menu-item";
+
+          const name = document.createElement("div");
+          name.className = "menu-name";
+          name.textContent = item.name;
+
+          const desc = document.createElement("div");
+          desc.className = "menu-desc";
+          desc.textContent = item.description;
+
+          const footer = document.createElement("div");
+          footer.className = "menu-footer";
+
+          const price = document.createElement("div");
+          price.className = "menu-price";
+          price.textContent = "$" + item.price.toFixed(2);
+
+          const addBtn = document.createElement("button");
+          addBtn.className = "btn-small";
+          addBtn.textContent = "Add";
+          addBtn.onclick = function () {
+            addMenuItemToOrder(item.id);
+          };
+
+          footer.appendChild(price);
+          footer.appendChild(addBtn);
+
+          card.appendChild(name);
+          card.appendChild(desc);
+          card.appendChild(footer);
+
+          menuGrid.appendChild(card);
+        });
+      }
+
+      // ✅ إضافة عنصر من القائمة إلى طلب الطاولة المحددة حاليًا
+      function addMenuItemToOrder(menuId) {
+        // ✅ يجب تحديد طاولة أولًا
+        if (selectedTableId === null) {
+          alert("Please select a table first.");
+          return;
+        }
+
+        // ✅ يجب أن تكون الطاولة المحددة مفتوحة
+        const table = tables.find(function (t) {
+          return t.id === selectedTableId;
+        });
+
+        if (!table || !table.isOpen) {
+          alert("Selected table must be OPEN to add items.");
+          return;
+        }
+
+        // ✅ البحث عن تفاصيل عنصر القائمة
+        const menuItem = menu.find(function (m) {
+          return m.id === menuId;
+        });
+
+        if (!menuItem) return;
+
+        // ✅ إنشاء مصفوفة الطلب إذا لم تكن موجودة بعد
+        if (!ordersByTable[selectedTableId]) {
+          ordersByTable[selectedTableId] = [];
+        }
+
+        const orderItems = ordersByTable[selectedTableId];
+
+        // ✅ التحقق مما إذا كان العنصر موجودًا بالفعل في الطلب
+        const existingItem = orderItems.find(function (it) {
+          return it.menuId === menuId;
+        });
+
+        if (existingItem) {
+          existingItem.quantity += 1;
+        } else {
+          orderItems.push({
+            menuId: menuItem.id,
+            name: menuItem.name,
+            price: menuItem.price,
+            quantity: 1,
+          });
+        }
+
+        renderCurrentOrder();
+      }
+
+      /* =========================================================
+         ✅ 6) الطلب: العرض + تحديث الكمية + الحذف + المسح
+         ========================================================= */
+
+      // ✅ عرض طلب الطاولة المحددة (أسفل اليمين)
+      function renderCurrentOrder() {
+        orderBody.innerHTML = "";
+
+        // ✅ لا توجد طاولة محددة
+        if (selectedTableId === null) {
+          orderEmpty.textContent = "No table selected.";
+          orderEmpty.style.display = "block";
+          orderTotal.textContent = "$0.00";
+          return;
+        }
+
+        const orderItems = ordersByTable[selectedTableId] || [];
+
+        // ✅ الطاولة المحددة لا تحتوي على عناصر بعد
+        if (orderItems.length === 0) {
+          orderEmpty.textContent = "No items for this table yet.";
+          orderEmpty.style.display = "block";
+          orderTotal.textContent = "$0.00";
+          return;
+        }
+
+        orderEmpty.style.display = "none";
+
+        let total = 0;
+
+        orderItems.forEach(function (item) {
+          const tr = document.createElement("tr");
+
+          // ✅ اسم العنصر
+          const tdName = document.createElement("td");
+          tdName.textContent = item.name;
+
+          // ✅ سعر الوحدة
+          const tdPrice = document.createElement("td");
+          tdPrice.textContent = "$" + item.price.toFixed(2);
+
+          // ✅ عناصر التحكم بالكمية (+/-)
+          const tdQty = document.createElement("td");
+          const qtyControls = document.createElement("div");
+          qtyControls.className = "qty-controls";
+
+          const btnMinus = document.createElement("button");
+          btnMinus.className = "btn-small";
+          btnMinus.textContent = "-";
+          btnMinus.onclick = function () {
+            changeQuantity(item.menuId, -1);
+          };
+
+          const spanQty = document.createElement("span");
+          spanQty.className = "qty-value";
+          spanQty.textContent = item.quantity;
+
+          const btnPlus = document.createElement("button");
+          btnPlus.className = "btn-small";
+          btnPlus.textContent = "+";
+          btnPlus.onclick = function () {
+            changeQuantity(item.menuId, 1);
+          };
+
+          qtyControls.appendChild(btnMinus);
+          qtyControls.appendChild(spanQty);
+          qtyControls.appendChild(btnPlus);
+          tdQty.appendChild(qtyControls);
+
+          // ✅ المجموع الفرعي
+          const tdSub = document.createElement("td");
+          const subtotal = item.price * item.quantity;
+          tdSub.textContent = "$" + subtotal.toFixed(2);
+          total += subtotal;
+
+          // ✅ زر حذف سطر الطلب
+          const tdRemove = document.createElement("td");
+          const removeBtn = document.createElement("button");
+          removeBtn.className = "btn-danger btn-small";
+          removeBtn.textContent = "×";
+          removeBtn.onclick = function () {
+            removeOrderItem(item.menuId);
+          };
+          tdRemove.appendChild(removeBtn);
+
+          tr.appendChild(tdName);
+          tr.appendChild(tdPrice);
+          tr.appendChild(tdQty);
+          tr.appendChild(tdSub);
+          tr.appendChild(tdRemove);
+
+          orderBody.appendChild(tr);
+        });
+
+        orderTotal.textContent = "$" + total.toFixed(2);
+      }
+
+      // ✅ تغيير كمية عنصر واحد في الطلب (+1 أو -1)
+      function changeQuantity(menuId, delta) {
+        if (selectedTableId === null) return;
+
+        const orderItems = ordersByTable[selectedTableId];
+        if (!orderItems) return;
+
+        const item = orderItems.find(function (it) {
+          return it.menuId === menuId;
+        });
+
+        if (!item) return;
+
+        item.quantity += delta;
+
+        // ✅ إذا أصبحت الكمية 0 → احذف السطر
+        if (item.quantity <= 0) {
+          const index = orderItems.indexOf(item);
+          if (index !== -1) orderItems.splice(index, 1);
+        }
+
+        renderCurrentOrder();
+      }
+
+      // ✅ حذف سطر طلب بالكامل
+      function removeOrderItem(menuId) {
+        if (selectedTableId === null) return;
+
+        const orderItems = ordersByTable[selectedTableId];
+        if (!orderItems) return;
+
+        const index = orderItems.findIndex(function (it) {
+          return it.menuId === menuId;
+        });
+
+        if (index !== -1) orderItems.splice(index, 1);
+
+        renderCurrentOrder();
+      }
+
+      // ✅ مسح طلب الطاولة الحالية بالكامل
+      function clearOrder() {
+        if (selectedTableId === null) {
+          alert("Select a table first.");
+          return;
+        }
+
+        const current = ordersByTable[selectedTableId] || [];
+        if (current.length === 0) {
+          alert("No items to clear for this table.");
+          return;
+        }
+
+        if (!confirm("Clear all items for this table?")) return;
+
+        ordersByTable[selectedTableId] = [];
+        renderCurrentOrder();
+      }
+
+      /* =========================================================
+         ✅ 7) طباعة الفاتورة في نافذة منبثقة + إغلاق الطاولة
+         ========================================================= */
+
+
+    </script>
+  </body>
+</html>

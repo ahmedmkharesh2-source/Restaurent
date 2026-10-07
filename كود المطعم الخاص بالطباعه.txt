@@ -1,0 +1,123 @@
+      function printCheckAndClose() {
+        // ✅ Must select a table first
+        if (selectedTableId === null) {
+          alert("Please select a table first.");
+          return;
+        }
+
+        // ✅ Find table object
+        const table = tables.find(function (t) {
+          return t.id === selectedTableId;
+        });
+
+        if (!table) {
+          alert("Table not found.");
+          return;
+        }
+
+        // ✅ Must have items to print
+        const orderItems = ordersByTable[selectedTableId] || [];
+        if (orderItems.length === 0) {
+          alert("No items for this table to print.");
+          return;
+        }
+
+        // ✅ Calculate total
+        let total = 0;
+        orderItems.forEach(function (item) {
+          total += item.price * item.quantity;
+        });
+
+        // ✅ Open a popup window (new tab/window)
+        const popup = window.open("", "PrintCheck", "width=600,height=700");
+
+        // ✅ Build printable HTML string
+        const now = new Date();
+
+        let checkHtml = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bill - ${table.name}</title>
+    <style>
+      body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 20px; color: #111827; }
+      h1, h2 { margin: 0; }
+      .header { text-align: center; margin-bottom: 16px; }
+      .meta { font-size: 0.9rem; margin-bottom: 12px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.9rem; }
+      th, td { border-bottom: 1px solid #d1d5db; padding: 6px 4px; text-align: left; }
+      th { background: #f3f4f6; }
+      .total-row td { font-weight: 700; }
+      .footer { margin-top: 20px; text-align: center; font-size: 0.9rem; }
+      .small { font-size: 0.8rem; color: #6b7280; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Restaurant Bill</h1>
+      <h2>${table.name}</h2>
+    </div>
+    <div class="meta">
+      Date: ${now.toLocaleDateString()}<br/>
+      Time: ${now.toLocaleTimeString()}
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:45%">Item</th>
+          <th style="width:15%">Price</th>
+          <th style="width:15%">Qty</th>
+          <th style="width:25%">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+        // ✅ Add rows for each item
+        orderItems.forEach(function (item) {
+          const sub = item.price * item.quantity;
+          checkHtml += `
+<tr>
+  <td>${item.name}</td>
+  <td>$${item.price.toFixed(2)}</td>
+  <td>${item.quantity}</td>
+  <td>$${sub.toFixed(2)}</td>
+</tr>
+`;
+        });
+
+        // ✅ Finish HTML (auto-print on load)
+        checkHtml += `
+<tr class="total-row">
+  <td colspan="3">Total</td>
+  <td>$${total.toFixed(2)}</td>
+</tr>
+</tbody>
+</table>
+<div class="footer">
+  <div>Thank you for your visit! 😊</div>
+  <div class="small">You can print this page or save it as PDF from your browser.</div>
+</div>
+<script>
+  window.onload = function () {
+    window.print();
+  };
+<\/script>
+</body>
+</html>
+`;
+
+        // ✅ Write printable content into the popup
+        popup.document.open();
+        popup.document.write(checkHtml);
+        popup.document.close();
+
+        // ✅ Demo behavior: close the table immediately & clear its order
+        // (We can't reliably detect print completion in all browsers.)
+        table.isOpen = false;
+        ordersByTable[selectedTableId] = [];
+
+        renderTables();
+        renderCurrentOrder();
+      }
